@@ -19,7 +19,7 @@
   }
   .card {
     width: 100%;
-    max-width: 360px;
+    max-width: 380px;
     text-align: center;
   }
   .icon {
@@ -34,7 +34,7 @@
     font-size: 80px;
   }
   .nombre {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 700;
     letter-spacing: -0.5px;
     margin-bottom: 6px;
@@ -45,59 +45,24 @@
     font-weight: 500;
     margin-bottom: 2rem;
   }
-  .prog-wrap {
-    background: #2a2a2a;
-    height: 4px;
-    border-radius: 2px;
-    margin-bottom: 8px;
-    cursor: pointer;
+  .player-wrap {
+    background: #181818;
+    border-radius: 16px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
   }
-  .prog-fill {
-    height: 100%;
-    background: #1DB954;
-    border-radius: 2px;
-    width: 0%;
-    transition: width .1s linear;
+  .player-wrap iframe {
+    width: 100%;
+    height: 80px;
+    border: none;
+    border-radius: 8px;
   }
-  .times {
-    display: flex;
-    justify-content: space-between;
+  .hint {
     font-size: 12px;
     color: #555;
-    margin-bottom: 1.75rem;
+    margin-top: 10px;
+    line-height: 1.5;
   }
-  .controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 36px;
-    margin-bottom: 2rem;
-  }
-  .btn-play {
-    width: 68px;
-    height: 68px;
-    border-radius: 50%;
-    background: #1DB954;
-    border: none;
-    cursor: pointer;
-    font-size: 28px;
-    color: #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform .1s;
-  }
-  .btn-play:active { transform: scale(0.95); }
-  .btn-skip {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #555;
-    font-size: 28px;
-    transition: color .15s;
-    padding: 8px;
-  }
-  .btn-skip:hover { color: #fff; }
   .badge {
     font-size: 12px;
     color: #444;
@@ -105,15 +70,9 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
+    margin-top: 1rem;
   }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: #1DB954; }
-  .loading {
-    color: #555;
-    font-size: 13px;
-    margin-top: 1rem;
-    min-height: 20px;
-  }
-  .error { color: #e74c3c; font-size: 13px; margin-top: 1rem; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -122,93 +81,28 @@
   <div class="nombre" id="nombre">Cargando...</div>
   <div class="subtitulo">Feliz día Papá 💚</div>
 
-  <div class="prog-wrap" id="pw" onclick="seek(event)">
-    <div class="prog-fill" id="pf"></div>
-  </div>
-  <div class="times">
-    <span id="ct">0:00</span>
-    <span id="dt">—</span>
-  </div>
-
-  <div class="controls">
-    <button class="btn-skip" onclick="skip(-10)" title="−10s">⏮</button>
-    <button class="btn-play" id="bp" onclick="toggle()">▶</button>
-    <button class="btn-skip" onclick="skip(10)" title="+10s">⏭</button>
+  <div class="player-wrap">
+    <iframe id="drive-player" allow="autoplay" allowfullscreen></iframe>
+    <p class="hint">Dale al botón de reproducir para escuchar el mensaje</p>
   </div>
 
   <div class="badge">
     <div class="dot"></div>
     <span>Llavero musical · MtraRosi</span>
   </div>
-  <div class="loading" id="msg">Cargando audio...</div>
 </div>
-
-<audio id="aud" preload="auto"></audio>
 
 <script>
   const params = new URLSearchParams(window.location.search);
   const nombre = params.get('nombre') || 'Mensaje especial';
-  const audioUrl = params.get('audio') || '';
+  const fileId = params.get('audio') || '';
 
   document.getElementById('nombre').textContent = nombre;
   document.title = 'Feliz día Papá · ' + nombre;
 
-  const aud = document.getElementById('aud');
-  const msg = document.getElementById('msg');
-
-  if (audioUrl) {
-    aud.src = audioUrl;
-    aud.load();
-  } else {
-    msg.className = 'error';
-    msg.textContent = 'No se encontró el audio.';
-  }
-
-  aud.addEventListener('loadedmetadata', () => {
-    document.getElementById('dt').textContent = fmt(aud.duration);
-    msg.textContent = '';
-  });
-
-  aud.addEventListener('timeupdate', () => {
-    document.getElementById('ct').textContent = fmt(aud.currentTime);
-    if (aud.duration) {
-      document.getElementById('pf').style.width = (aud.currentTime / aud.duration * 100) + '%';
-    }
-  });
-
-  aud.addEventListener('ended', () => {
-    document.getElementById('bp').textContent = '▶';
-  });
-
-  aud.addEventListener('error', () => {
-    msg.className = 'error';
-    msg.textContent = 'No se pudo cargar el audio. Verifica que el archivo de Drive esté compartido con "Cualquier persona con el enlace".';
-  });
-
-  function toggle() {
-    if (aud.paused) {
-      aud.play().catch(() => {});
-      document.getElementById('bp').textContent = '⏸';
-    } else {
-      aud.pause();
-      document.getElementById('bp').textContent = '▶';
-    }
-  }
-
-  function skip(sec) {
-    aud.currentTime = Math.max(0, Math.min(aud.duration || 0, aud.currentTime + sec));
-  }
-
-  function seek(e) {
-    const bar = document.getElementById('pw');
-    const rect = bar.getBoundingClientRect();
-    const pct = (e.clientX - rect.left) / rect.width;
-    if (aud.duration) aud.currentTime = pct * aud.duration;
-  }
-
-  function fmt(s) {
-    if (!s || isNaN(s)) return '0:00';
-    return Math.floor(s / 60) + ':' + (Math.floor(s % 60) + '').padStart(2, '0');
+  if (fileId) {
+    document.getElementById('drive-player').src =
+      `https://drive.google.com/file/d/${fileId}/preview`;
   }
 </script>
 </body>
